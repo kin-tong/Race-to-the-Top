@@ -28,12 +28,17 @@ def Preprocessing():
 
 			i += 1
 
+		input_file.close()
+		output_file.close()
+
 	output_file_path = data_path + "../../../Temp/ids" + dataset + ".csv"
 
 	output_file = open(output_file_path, 'w')
 
 	for i in primary_ids:
 		output_file.write(str(i) + "\n")
+
+	output_file.close()
 
 def CreateTables():
 	global database_name
@@ -59,7 +64,6 @@ def CreateTables():
 	cur.execute(code)
 	code = "CREATE TABLE IDS (I_ID INTEGER NOT NULL);"
 	cur.execute(code)
-
 	con.commit()
 	con.close()
 
@@ -77,16 +81,19 @@ def CopyTables():
 
 	for element in relations:
 		element_file_path = data_path + "../../../Temp/" + element.lower() + dataset + ".csv"
-
 		element_file = open(element_file_path, 'r')
-		cur.copy_from(element_file, element, sep='|')
+		sql = "COPY " + element + " FROM STDIN WITH (FORMAT CSV, DELIMITER '|', HEADER FALSE);"
+		cur.copy_expert(sql, element_file)
+		element_file.close()
 
 		os.remove(element_file_path)
 
 	ids_file_path = data_path + "../../../Temp/ids" + dataset + ".csv"
 
 	ids_file = open(ids_file_path, 'r')
-	cur.copy_from(ids_file, "IDS", sep='|')
+	sql = "COPY " + "IDS" + " FROM STDIN WITH (FORMAT CSV, DELIMITER '|', HEADER FALSE);"
+	cur.copy_expert(sql, ids_file)
+	ids_file.close()
 
 	os.remove(ids_file_path)
 
@@ -249,6 +256,7 @@ def main(argv):
 		if primary_relation_path != '':
 			primary_relation_file = open(cur_path + "/" + primary_relation_path,'r')
 			primary_relations = primary_relation_file.readline().upper().split()
+			primary_relation_file.close()
 
 			for element in primary_relations:
 				if element not in relations:
